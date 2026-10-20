@@ -55,6 +55,11 @@ npm run start -- --host 127.0.0.1 --proxy-config proxy.conf.json
 Commit generated migration files with the model changes that require them.
 
 ## Deploy to Vercel with Neon
+Two layouts; pick one **Root Directory** per Vercel project:
+- `stockpilot` (below): frontend and API in one project.
+- `stockpilot/backend`: API only, via [`backend/vercel.json`](backend/vercel.json) (`@vercel/python`, entry `backend/api/index.py`).
+- `stockpilot/frontend`: Angular app, via [`frontend/vercel.json`](frontend/vercel.json). Replace both `backend-url-not-set.invalid` hosts there with the deployed backend URL, and set `CSRF_TRUSTED_ORIGINS` on the backend project to the frontend's `https://` URL. The frontend proxies `/api/*`, so the browser stays on one origin.
+
 One Vercel project, **Root Directory = `stockpilot`**. [`vercel.json`](vercel.json) builds Angular to static files and serves Django from [`api/index.py`](api/index.py); the browser calls `/api/...` on the same origin, so no CORS is needed.
 
 1. In Neon, copy both connection strings and keep them out of the repo: **direct** (host without `-pooler`) for migrations, **pooled** for Vercel at runtime. Migrating through the pooler drops the connection mid-DDL.
