@@ -1,0 +1,53 @@
+<section class="page-heading">
+  <div>
+    <div class="eyebrow">INVENTORY CONTROL <span>·</span> EXCEPTIONS</div>
+    <h1>Variance register</h1>
+    <p>Submitted count differences, valued at the product cost captured during counting.</p>
+  </div>
+  <button class="refresh-button" type="button" (click)="load()" [disabled]="loading()" aria-label="Refresh variances" title="Refresh variances"><ng-icon name="lucideRefreshCw" aria-hidden="true" /></button>
+</section>
+
+@if (error()) { <div class="error-banner" role="alert"><span>{{ error() }}</span><button type="button" (click)="load()">Retry</button></div> }
+
+<section class="exposure-grid" aria-label="Variance value summary">
+  <article class="exposure shortage"><span>GROSS SHORTAGE COST</span><strong>{{ grossShortage() | currency:'KES':'code':'1.2-2' }}</strong><small>Shortages only; not offset by surplus</small></article>
+  <article class="exposure surplus"><span>GROSS SURPLUS COST</span><strong>{{ grossSurplus() | currency:'KES':'code':'1.2-2' }}</strong><small>Surplus value is shown separately</small></article>
+  <article class="exposure net"><span>NET COST VARIANCE</span><strong>{{ netCost() | currency:'KES':'code':'1.2-2' }}</strong><small>Signed total at captured unit cost</small></article>
+</section>
+
+<section class="register-panel">
+  <header class="register-toolbar">
+    <div class="filter-tabs" role="group" aria-label="Filter variance type">
+      <button type="button" [class.active]="filter() === 'ALL'" (click)="filter.set('ALL')">All <span>{{ rows().length }}</span></button>
+      <button type="button" [class.active]="filter() === 'SHORTAGE'" (click)="filter.set('SHORTAGE')">Shortages</button>
+      <button type="button" [class.active]="filter() === 'SURPLUS'" (click)="filter.set('SURPLUS')">Surpluses</button>
+    </div>
+    <label class="search-box"><span aria-hidden="true">⌕</span><input type="search" [value]="query()" (input)="query.set($any($event.target).value)" placeholder="Search SKU, count or location" aria-label="Search variances"></label>
+  </header>
+
+  @if (loading()) { <div class="empty-state">Loading variance records…</div> }
+  @else if (!filtered().length) {
+    <div class="empty-state"><span class="empty-mark">✓</span><strong>{{ rows().length ? 'No matching variances' : 'No submitted variances' }}</strong><span>{{ rows().length ? 'Adjust the search or filter to see other records.' : 'Submit a stock count with a discrepancy to populate this register.' }}</span></div>
+  } @else {
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Count / location</th><th>Product</th><th>Expected</th><th>Counted</th><th>Variance</th><th>Variance %</th><th>Cost exposure</th><th>Counted at</th></tr></thead>
+        <tbody>
+          @for (row of filtered(); track row.id) {
+            <tr>
+              <td><strong>{{ row.count_reference }}</strong><small>{{ row.location_code }}</small></td>
+              <td><strong>{{ row.product_sku }}</strong><small>{{ row.product_name }}</small></td>
+              <td>{{ row.expected_quantity }}</td>
+              <td>{{ row.counted_quantity }}</td>
+              <td><span class="variance-pill" [class.shortage]="isShortage(row)" [class.surplus]="!isShortage(row)">{{ isShortage(row) ? 'SHORT' : 'SURPLUS' }} {{ row.variance_quantity }}</span></td>
+              <td>{{ row.variance_percent === null ? 'N/A' : row.variance_percent + '%' }}</td>
+              <td class="cost-cell"><strong>{{ (isShortage(row) ? row.shortage_cost : row.surplus_cost) | currency:'KES':'code':'1.2-2' }}</strong><small>retail {{ (isShortage(row) ? row.shortage_retail : row.surplus_retail) | currency:'KES':'code':'1.2-2' }}</small></td>
+              <td>{{ row.counted_at | date:'medium' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <footer class="register-footer">{{ filtered().length }} of {{ rows().length }} discrepancy records</footer>
+  }
+</section>

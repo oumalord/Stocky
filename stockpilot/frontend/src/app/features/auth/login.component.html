@@ -1,0 +1,25 @@
+<main class="login-page">
+  <section class="login-brand" aria-label="StockPilot">
+    <a class="brand" href="/login"><span class="brand-mark">S</span><span>StockPilot</span></a>
+    <div class="brand-copy"><span class="eyebrow">INVENTORY CONTROL</span><h1>Know what<br>is on your shelves.</h1><p>Accurate counts begin with a clear record.</p></div>
+    <span class="brand-footer">SECURE ORGANISATION WORKSPACE</span>
+  </section>
+  <section class="login-form-side">
+    <div class="login-box">
+      <span class="eyebrow">WELCOME BACK</span>
+      <h2>Sign in to your account</h2>
+      <p class="form-intro">Use your organisation account to continue.</p>
+      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <label for="email">Email address</label>
+        <input id="email" formControlName="email" type="email" autocomplete="username" placeholder="you@company.com" required [attr.aria-invalid]="form.controls.email.invalid && form.controls.email.touched">
+        @if (form.controls.email.invalid && form.controls.email.touched) { <span class="field-error">Enter a valid email address.</span> }
+        <label for="password">Password</label>
+        <input id="password" formControlName="password" type="password" autocomplete="current-password" placeholder="Enter your password" required [attr.aria-invalid]="form.controls.password.invalid && form.controls.password.touched">
+        @if (form.controls.password.invalid && form.controls.password.touched) { <span class="field-error">Password is required.</span> }
+        @if (error()) { <p class="error-message" role="alert">{{ error() }}</p> }
+        <button type="submit" [disabled]="form.invalid || busy()">{{ busy() ? 'Signing in…' : 'Sign in' }}<ng-icon name="lucideArrowRight" aria-hidden="true" /></button>
+      </form>
+      <p class="security-note"><span aria-hidden="true">●</span> Your session is protected with secure cookies.</p>
+    </div>
+  </section>
+</main>

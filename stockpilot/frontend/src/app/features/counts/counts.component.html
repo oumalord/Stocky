@@ -1,0 +1,97 @@
+<section class="page-heading">
+  <div>
+    <div class="eyebrow">INVENTORY CONTROL <span>·</span> COUNTING</div>
+    <h1>Stock counts</h1>
+    <p>Capture physical stock, reconcile movements, and submit count results.</p>
+  </div>
+  <span class="count-total"><strong>{{ counts().length }}</strong> recent counts</span>
+</section>
+
+@if (notice()) { <div class="notice" role="status">{{ notice() }}</div> }
+@if (error()) { <div class="error-banner" role="alert"><span>{{ error() }}</span><button type="button" (click)="load()">Retry</button></div> }
+
+<section class="create-panel" aria-labelledby="new-count-title">
+  <div class="section-title">
+    <div><span class="step-number">01</span><h2 id="new-count-title">Start a count</h2></div>
+    <span class="quiet-label">Expected quantities are snapshotted when the count starts</span>
+  </div>
+  <div class="create-grid">
+    <label class="field location-field">Location
+      <select [ngModel]="selectedLocation()" (ngModelChange)="selectedLocation.set($event)" name="location">
+        @for (location of locations(); track location.id) { <option [value]="location.id">{{ location.code }} · {{ location.name }}</option> }
+      </select>
+    </label>
+    <label class="blind-option"><input type="checkbox" [ngModel]="blind()" (ngModelChange)="blind.set($event)" name="blind"> Blind count</label>
+    <button class="primary-button" type="button" (click)="createCount()" [disabled]="saving() || !selectedProducts().length || !selectedLocation()">
+      <ng-icon name="lucidePlus" aria-hidden="true" /> Start count <small>({{ selectedProducts().length }})</small>
+    </button>
+  </div>
+  <div class="product-pick-list" aria-label="Products to count">
+    @for (product of products(); track product.id) {
+      <label class="product-pick"><input type="checkbox" [checked]="selectedProducts().includes(product.id)" (change)="toggleProduct(product.id, $any($event.target).checked)">
+        <span><strong>{{ product.sku }}</strong><small>{{ product.name }}</small></span>
+      </label>
+    } @empty {
+      <span class="empty-inline">No active products are available to count.</span>
+    }
+  </div>
+</section>
+
+<section class="work-grid">
+  <div class="list-panel">
+    <div class="panel-heading"><h2>Recent counts</h2><span>{{ counts().length }}</span></div>
+    @if (loading()) { <div class="loading-state">Loading count history…</div> }
+    @else if (!counts().length) { <div class="empty-state"><strong>No counts yet</strong><span>Choose products above to begin a physical count.</span></div> }
+    @else {
+      <div class="count-list">
+        @for (count of counts(); track count.id) {
+          <button type="button" class="count-list-item" [class.selected]="active()?.id === count.id" (click)="selectCount(count.id)">
+            <span class="count-id">{{ count.reference }}</span>
+            <span class="count-location">{{ count.location_code }} · {{ count.lines.length }} products</span>
+            <span class="status-pill" [class.done]="count.status === 'SUBMITTED'">{{ count.status === 'SUBMITTED' ? 'Submitted' : 'Draft' }}</span>
+          </button>
+        }
+      </div>
+    }
+  </div>
+
+  <div class="detail-panel">
+    @if (active(); as count) {
+      <div class="panel-heading detail-heading">
+        <div><span class="eyebrow">{{ count.location_code }} <span>·</span> {{ count.blind ? 'BLIND COUNT' : 'STANDARD COUNT' }}</span><h2>{{ count.reference }}</h2></div>
+        @if (count.status === 'DRAFT') { <button class="primary-button submit-button" type="button" (click)="submitCount()" [disabled]="saving()">Submit count</button> }
+        @else { <span class="submitted-label">Submitted</span> }
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Product</th><th>{{ count.status === 'SUBMITTED' ? 'Expected at count' : 'Snapshot' }}</th><th>Counted</th><th>Variance</th><th></th></tr></thead>
+          <tbody>
+            @for (line of count.lines; track line.id) {
+              <tr>
+                <td><strong>{{ line.product_sku }}</strong><small>{{ line.product_name }}</small></td>
+                <td>{{ count.status === 'SUBMITTED' ? line.expected_quantity : line.expected_at_start === null ? 'Hidden' : line.expected_at_start }}</td>
+                <td>
+                  @if (count.status === 'DRAFT') {
+                    <input class="qty-input" type="number" min="0" step="0.0001" inputmode="decimal" [attr.aria-label]="'Counted quantity for ' + line.product_sku"
+                      [ngModel]="quantities()[line.id]" (ngModelChange)="setQuantity(line.id, $event)">
+                  } @else { {{ line.counted_quantity }} }
+                </td>
+                <td>
+                  @if (count.status === 'SUBMITTED') {
+                    <span class="variance-value" [class.shortage]="isShortage(line.variance_quantity)" [class.surplus]="isSurplus(line.variance_quantity)">{{ line.variance_quantity }}</span>
+                  } @else { <span class="muted-dash">—</span> }
+                </td>
+                <td>@if (count.status === 'DRAFT') { <button class="save-line" type="button" (click)="recordLine(line)" [disabled]="saving() || !quantities()[line.id]">Save</button> }</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      @if (count.status === 'SUBMITTED') {
+        <div class="count-summary"><span>Shortage cost <strong>{{ shortageTotal(count) | currency:'KES':'code':'1.2-2' }}</strong></span><span>Surplus cost <strong>{{ surplusTotal(count) | currency:'KES':'code':'1.2-2' }}</strong></span></div>
+      }
+    } @else {
+      <div class="empty-state detail-empty"><span class="empty-mark">01</span><strong>Select a count</strong><span>Open a draft to enter quantities or review a submitted result.</span></div>
+    }
+  </div>
+</section>

@@ -1,0 +1,40 @@
+<div class="workspace">
+  <aside class="sidebar">
+    <a class="brand" routerLink="/counts" aria-label="StockPilot home">
+      <span class="brand-mark">S</span>
+      <span><strong>StockPilot</strong><small>INVENTORY CONTROL</small></span>
+    </a>
+
+    <div class="nav-caption">WORKSPACE</div>
+    <nav aria-label="Main navigation">
+      @if (auth.can('count.view')) {
+        <a routerLink="/counts" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+          <ng-icon class="nav-icon" name="lucideClipboardList" aria-hidden="true" /> Stock counts
+        </a>
+      }
+      @if (auth.can('variance.view')) {
+        <a routerLink="/variances" routerLinkActive="active">
+          <ng-icon class="nav-icon" name="lucideChartNoAxesCombined" aria-hidden="true" /> Variance register
+        </a>
+      }
+    </nav>
+
+    <div class="sidebar-foot">
+      <span class="environment-tag">DEVELOPMENT</span>
+      <span class="sidebar-note">Stock activity is recorded in an append-only ledger.</span>
+    </div>
+  </aside>
+
+  <section class="main-column">
+    <header class="topbar">
+      <div class="crumb"><span>StockPilot</span><span aria-hidden="true">/</span><strong>Inventory workspace</strong></div>
+      <div class="account">
+        <span class="account-org">{{ auth.membership()?.organisation_name || 'Organisation' }}</span>
+        <span class="avatar" aria-hidden="true">{{ (auth.me()?.full_name || 'U').slice(0, 1).toUpperCase() }}</span>
+        <span class="account-name">{{ auth.me()?.full_name || auth.me()?.email }}</span>
+        <button class="signout" type="button" (click)="logout()" aria-label="Sign out" title="Sign out"><ng-icon name="lucideLogOut" aria-hidden="true" /></button>
+      </div>
+    </header>
+    <main class="page-area"><router-outlet /></main>
+  </section>
+</div>
